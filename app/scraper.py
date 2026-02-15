@@ -107,7 +107,12 @@ def _scroll_and_collect_urls(page, max_results: int) -> list[str]:
 
 def _extract_listing_details(page, url: str) -> dict:
     """Navigate to a listing detail page and extract business information."""
-    page.goto(url, wait_until="networkidle", timeout=30000)
+    page.goto(url, wait_until="domcontentloaded", timeout=30000)
+    # Wait for the business name to appear (proves the listing content loaded)
+    try:
+        page.wait_for_selector(SELECTORS["name"], timeout=10000)
+    except Exception:
+        pass  # Continue anyway, some fields may still be available
     _random_delay(page)
 
     lead = {"google_maps_url": url}
@@ -207,7 +212,7 @@ def scrape_google_maps_sync(
             # Navigate to Google Maps search
             url = build_search_url(business_type, location)
             logger.info(f"Navigating to: {url}")
-            page.goto(url, wait_until="networkidle", timeout=30000)
+            page.goto(url, wait_until="domcontentloaded", timeout=30000)
 
             # Handle cookie consent
             _dismiss_cookie_consent(page)
