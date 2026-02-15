@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 from datetime import datetime
 from functools import partial
 
@@ -51,8 +52,11 @@ async def run_scrape_job(job_id: str) -> None:
             logger.info(f"Job {job_id} completed with {job.progress} leads")
 
         except Exception as e:
-            logger.error(f"Job {job_id} failed: {e}")
+            error_detail = traceback.format_exc()
+            logger.error(f"Job {job_id} failed:\n{error_detail}")
             job.status = "failed"
-            job.error_message = str(e)
+            job.error_message = str(e) or repr(e)
+            if not job.error_message or job.error_message == "":
+                job.error_message = error_detail
 
         await session.commit()
