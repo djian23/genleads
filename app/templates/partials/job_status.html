@@ -1,0 +1,84 @@
+{% if job.status == "pending" or job.status == "running" %}
+<div id="job-status"
+     hx-get="/api/jobs/{{ job.id }}/status"
+     hx-trigger="every 2s"
+     hx-swap="outerHTML"
+     class="bg-white rounded-lg shadow p-6">
+    <div class="flex items-center justify-between mb-3">
+        <p class="text-gray-700 font-medium">
+            Recherche en cours : <span class="text-blue-600">{{ job.business_type }}</span>
+            a <span class="text-blue-600">{{ job.location }}</span>
+        </p>
+        <span class="text-sm text-gray-500">{{ job.progress }} / {{ job.requested_count }}</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-3">
+        {% set pct = (job.progress / job.requested_count * 100) | int if job.requested_count > 0 else 0 %}
+        <div class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: {{ pct }}%"></div>
+    </div>
+    <p class="text-sm text-gray-500 mt-2">Scraping en cours, veuillez patienter...</p>
+</div>
+
+{% elif job.status == "failed" %}
+<div id="job-status" class="bg-white rounded-lg shadow p-6">
+    <div class="bg-red-50 border border-red-200 rounded-md p-4">
+        <p class="text-red-700 font-medium">La recherche a echoue</p>
+        {% if job.error_message %}
+        <p class="text-red-600 text-sm mt-1">{{ job.error_message }}</p>
+        {% endif %}
+    </div>
+</div>
+
+{% elif job.status == "completed" %}
+<div id="job-status" class="bg-white rounded-lg shadow p-6">
+    <div class="flex items-center justify-between mb-4">
+        <p class="text-green-600 font-semibold">{{ leads | length }} prospect(s) trouve(s)</p>
+        <a href="/api/jobs/{{ job.id }}/export"
+           class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm">
+            Exporter en CSV
+        </a>
+    </div>
+
+    {% if leads | length > 0 %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full border border-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Nom</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Telephone</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Adresse</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Site web</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Note</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Avis</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads %}
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-4 py-2">
+                        {% if lead.google_maps_url %}
+                        <a href="{{ lead.google_maps_url }}" target="_blank"
+                           class="text-blue-600 hover:underline">{{ lead.name }}</a>
+                        {% else %}
+                        {{ lead.name }}
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-2 text-sm">{{ lead.phone or '-' }}</td>
+                    <td class="px-4 py-2 text-sm">{{ lead.address or '-' }}</td>
+                    <td class="px-4 py-2 text-sm">
+                        {% if lead.website %}
+                        <a href="{{ lead.website }}" target="_blank"
+                           class="text-blue-500 hover:underline">Lien</a>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td class="px-4 py-2 text-sm">{{ lead.rating or '-' }}</td>
+                    <td class="px-4 py-2 text-sm">{{ lead.reviews_count or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-gray-500">Aucun prospect trouve pour cette recherche.</p>
+    {% endif %}
+</div>
+{% endif %}
