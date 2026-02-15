@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 import traceback
 from datetime import datetime
 from functools import partial
@@ -13,6 +14,10 @@ logger = logging.getLogger(__name__)
 
 def _run_scraper(business_type: str, location: str, requested_count: int) -> list[dict]:
     """Run the synchronous Playwright scraper (called from a thread)."""
+    # On Windows, the thread needs its own ProactorEventLoop for subprocess support
+    if sys.platform == "win32":
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
     return scrape_google_maps_sync(business_type, location, requested_count)
 
 

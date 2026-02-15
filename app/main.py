@@ -1,5 +1,11 @@
 import asyncio
 import logging
+import sys
+
+# Fix Windows: force ProactorEventLoop which supports subprocesses
+# (needed by Playwright even in sync mode)
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, Response
